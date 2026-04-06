@@ -44,7 +44,9 @@ def extract_and_load():
     with mysql_engine.connect() as mysql_conn:
         for table in table_names:
             df = pd.read_sql(f"SELECT * FROM `{table}`", mysql_conn)
-            df.to_sql(table, pg_engine, if_exists="replace", index=False, method="multi")
+            with pg_engine.begin() as pg_conn:
+                pg_conn.execute(text(f'DROP TABLE IF EXISTS "{table}" CASCADE'))
+            df.to_sql(table, pg_engine, if_exists="fail", index=False, method="multi")
             print(f"[load]    {table}: {len(df):,} rows loaded")
 
     print("[done]    All tables loaded to PostgreSQL.")
